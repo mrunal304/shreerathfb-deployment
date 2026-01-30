@@ -5,6 +5,8 @@ import mongoose, { Schema, Document } from "mongoose";
 interface IFeedback extends Document {
   name: string;
   phoneNumber: string;
+  location: string;
+  dineType: "dine_in" | "take_out";
   ratings: {
     interior: number;
     food: number;
@@ -22,6 +24,8 @@ interface IFeedback extends Document {
 const FeedbackSchema = new Schema<IFeedback>({
   name: { type: String, required: true },
   phoneNumber: { type: String, required: true, match: /^9\d{9}$/ },
+  location: { type: String, required: true },
+  dineType: { type: String, enum: ["dine_in", "take_out"], required: true },
   ratings: {
     interior: { type: Number, min: 1, max: 5, required: true },
     food: { type: Number, min: 1, max: 5, required: true },
@@ -29,7 +33,7 @@ const FeedbackSchema = new Schema<IFeedback>({
     staff: { type: Number, min: 1, max: 5, required: true },
     hygiene: { type: Number, min: 1, max: 5, required: true }
   },
-  note: { type: String, maxlength: 500 },
+  note: { type: String, maxlength: 500, default: "" },
   createdAt: { type: Date, default: Date.now },
   contactedAt: Date,
   contactedBy: String,
@@ -211,11 +215,19 @@ export class MongoStorage implements IStorage {
   }
 
   private mapDocument(doc: IFeedback): Feedback {
+    const obj = doc.toObject();
     return {
-      ...doc.toObject(),
-      _id: doc._id.toString(),
-      createdAt: doc.createdAt.toISOString(), // ensure strings for dates
+      name: obj.name,
+      phoneNumber: obj.phoneNumber,
+      location: obj.location || "Location 1", // Ensure location is present
+      dineType: obj.dineType || "dine_in",
+      ratings: obj.ratings,
+      note: obj.note || "",
+      createdAt: doc.createdAt.toISOString(),
       contactedAt: doc.contactedAt?.toISOString(),
+      contactedBy: obj.contactedBy || null,
+      dateKey: obj.dateKey,
+      _id: doc._id.toString(),
     };
   }
 }
