@@ -39,12 +39,15 @@ export default function Home() {
   });
 
   const onSubmit = (data: InsertFeedback) => {
+    console.log("Submitting feedback:", data);
     createFeedback.mutate(data, {
-      onSuccess: () => {
+      onSuccess: (response) => {
+        console.log("Feedback submitted successfully:", response);
         setSubmitted(true);
         window.scrollTo({ top: 0, behavior: "smooth" });
       },
       onError: (error) => {
+        console.error("Feedback submission error:", error);
         toast({
           variant: "destructive",
           title: "Submission failed",

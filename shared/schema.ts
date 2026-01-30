@@ -16,7 +16,7 @@ export const feedbackSchema = z.object({
     staff: z.number().min(1).max(5),
     hygiene: z.number().min(1).max(5),
   }),
-  note: z.string().max(500, "Note cannot exceed 500 characters").optional(),
+  note: z.string().max(500, "Note cannot exceed 500 characters").optional().default(""),
   createdAt: z.string().or(z.date()).optional(), // Date as ISO string from API
   contactedAt: z.string().or(z.date()).nullable().optional(),
   contactedBy: z.string().nullable().optional(),
