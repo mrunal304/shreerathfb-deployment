@@ -7,12 +7,14 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
+import ThankYou from "@/pages/ThankYou";
 
 function Router() {
   return (
     <Switch>
       {/* Public Feedback Form */}
       <Route path="/" component={Home} />
+      <Route path="/thank-you" component={ThankYou} />
       
       {/* Admin Auth */}
       <Route path="/admin/login" component={Login} />
