@@ -21,27 +21,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { StatsCard } from "@/components/StatsCard";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, 
-  LineChart, Line, PieChart, Pie, Cell, Tooltip as RechartsTooltip 
+  LineChart, Line, Cell, Tooltip as RechartsTooltip 
 } from "recharts";
-
-const LineChartTooltip = RechartsTooltip;
-const BarChartTooltip = RechartsTooltip;
 import { format } from "date-fns";
 import { 
-  LayoutDashboard, LogOut, Search, User, CheckCircle2, 
-  MessageSquare, Star, TrendingUp, Users, Phone, Eye, Menu, X 
+  LayoutDashboard, LogOut, Search, Star, TrendingUp, Phone, Eye, Menu, X, CheckCircle2, MessageSquare
 } from "lucide-react";
 import {
   Tooltip as ShadcnTooltip,
@@ -53,13 +41,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 
 const COLORS = ['#FF4500', '#228B22', '#FFBB28', '#FF8042', '#8B4513'];
-
-import { 
-  LayoutDashboard, LogOut, Search, User, CheckCircle2, 
-  MessageSquare, Star, TrendingUp, Users, Phone, Eye, Menu, X 
-} from "lucide-react";
-
-// ... existing code ...
+const LineChartTooltip = RechartsTooltip;
+const BarChartTooltip = RechartsTooltip;
 
 export default function Dashboard() {
   const { data: user, isLoading: userLoading } = useUser();
