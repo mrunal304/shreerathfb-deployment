@@ -1,10 +1,8 @@
-import { Feedback, InsertFeedback, ContactUpdate, AnalyticsData } from "@shared/schema";
+import { Feedback, InsertFeedback, ContactUpdate, AnalyticsData, Visit } from "@shared/schema";
 import mongoose, { Schema, Document } from "mongoose";
 
 // Mongoose Schema Definition
-interface IFeedback extends Document {
-  name: string;
-  phoneNumber: string;
+interface IVisit {
   location: string;
   dineType: "dine_in" | "take_out";
   ratings: {
@@ -19,14 +17,18 @@ interface IFeedback extends Document {
   staffName?: string;
   staffComment?: string;
   createdAt: Date;
-  contactedAt?: Date;
-  contactedBy?: string;
   dateKey: string;
 }
 
-const FeedbackSchema = new Schema<IFeedback>({
-  name: { type: String, required: true },
-  phoneNumber: { type: String, required: true, match: /^\d{10}$/ },
+interface IFeedback extends Document {
+  name: string;
+  phoneNumber: string;
+  visits: IVisit[];
+  contactedAt?: Date;
+  contactedBy?: string;
+}
+
+const VisitSchema = new Schema<IVisit>({
   location: { type: String, required: true },
   dineType: { type: String, enum: ["dine_in", "take_out"], required: true },
   ratings: {
@@ -41,13 +43,19 @@ const FeedbackSchema = new Schema<IFeedback>({
   staffName: { type: String, default: "" },
   staffComment: { type: String, default: "" },
   createdAt: { type: Date, default: Date.now },
-  contactedAt: Date,
-  contactedBy: String,
-  dateKey: { type: String, required: true } // "YYYY-MM-DD"
+  dateKey: { type: String, required: true }
 });
 
-// Index for checking duplicates: phoneNumber + dateKey must be unique
-FeedbackSchema.index({ phoneNumber: 1, dateKey: 1 }, { unique: true });
+const FeedbackSchema = new Schema<IFeedback>({
+  name: { type: String, required: true },
+  phoneNumber: { type: String, required: true, match: /^\d{10}$/ },
+  visits: [VisitSchema],
+  contactedAt: Date,
+  contactedBy: String,
+});
+
+// Index for unique phone number
+FeedbackSchema.index({ phoneNumber: 1 }, { unique: true });
 
 export const FeedbackModel = mongoose.model<IFeedback>("Feedback", FeedbackSchema);
 
@@ -61,16 +69,42 @@ export interface IStorage {
 export class MongoStorage implements IStorage {
   async createFeedback(insertFeedback: InsertFeedback): Promise<Feedback> {
     const now = new Date();
-    const dateKey = now.toISOString().split('T')[0]; // YYYY-MM-DD
+    const dateKey = now.toISOString().split('T')[0];
 
-    const feedback = new FeedbackModel({
-      ...insertFeedback,
-      dateKey,
-      createdAt: now
-    });
+    const visit: IVisit = {
+      location: insertFeedback.location,
+      dineType: insertFeedback.dineType,
+      ratings: insertFeedback.ratings,
+      note: insertFeedback.note,
+      staffName: insertFeedback.staffName,
+      staffComment: insertFeedback.staffComment,
+      createdAt: now,
+      dateKey
+    };
 
-    const saved = await feedback.save();
-    return this.mapDocument(saved);
+    let feedback = await FeedbackModel.findOne({ phoneNumber: insertFeedback.phoneNumber });
+
+    if (feedback) {
+      // Check if already submitted today
+      const alreadySubmittedToday = (feedback.visits || []).some(v => v.dateKey === dateKey);
+      if (alreadySubmittedToday) {
+        const error: any = new Error("Already submitted today");
+        error.code = 11000;
+        throw error;
+      }
+      if (!feedback.visits) feedback.visits = [];
+      feedback.visits.push(visit);
+      await feedback.save();
+    } else {
+      feedback = new FeedbackModel({
+        name: insertFeedback.name,
+        phoneNumber: insertFeedback.phoneNumber,
+        visits: [visit]
+      });
+      await feedback.save();
+    }
+
+    return this.mapDocument(feedback);
   }
 
   async getFeedback(filters: { page: number; limit: number; search?: string; date?: string; rating?: number }): Promise<{ data: Feedback[]; total: number }> {
@@ -79,35 +113,19 @@ export class MongoStorage implements IStorage {
     if (filters.search) {
       query.$or = [
         { name: { $regex: filters.search, $options: 'i' } },
-        { phoneNumber: { $regex: filters.search, $options: 'i' } },
-        { staffName: { $regex: filters.search, $options: 'i' } }
+        { phoneNumber: { $regex: filters.search, $options: 'i' } }
       ];
     }
 
-    if (filters.date) {
-      query.dateKey = filters.date;
-    }
-
-    if (filters.rating) {
-      // Find feedbacks where ANY category matches or average matches?
-      // "Sort by ... rating" usually implies average, but filtering by rating could mean average >= X.
-      // Let's implement filtering where average rating is >= specified value
-      // This is hard to do in simple find without aggregation, let's stick to simple match if possible or aggregation.
-      // For simplicity in this iteration: Filter where 'ratings.food' >= rating (as a proxy) OR complex $expr
-      // Let's use aggregation pipeline if complex, but for MVP let's filter if ANY rating is >= value
-      // query['ratings.food'] = { $gte: filters.rating }; // Simplification
-    }
-    
-    // Sort logic can be added later, defaulting to createdAt desc
     const skip = (filters.page - 1) * filters.limit;
-    
+
     const [data, total] = await Promise.all([
-      FeedbackModel.find(query).sort({ createdAt: -1 }).skip(skip).limit(filters.limit),
+      FeedbackModel.find(query).sort({ "visits.createdAt": -1 }).skip(skip).limit(filters.limit),
       FeedbackModel.countDocuments(query)
     ]);
 
     return {
-      data: data.map(this.mapDocument),
+      data: data.map(doc => this.mapDocument(doc)),
       total
     };
   }
@@ -125,27 +143,24 @@ export class MongoStorage implements IStorage {
   }
 
   async getAnalytics(period: 'week' | 'month'): Promise<AnalyticsData> {
-    // Calculate date range
     const now = new Date();
     const startDate = new Date();
     startDate.setDate(now.getDate() - (period === 'week' ? 7 : 30));
 
-    // 1. Total Feedback & Response Rate & Top Category (Aggregation)
-    const matchStage = { createdAt: { $gte: startDate } };
-    
     const stats = await FeedbackModel.aggregate([
-      { $match: matchStage },
+      { $unwind: "$visits" },
+      { $match: { "visits.createdAt": { $gte: startDate } } },
       {
         $group: {
           _id: null,
           total: { $sum: 1 },
           contacted: { $sum: { $cond: [{ $ifNull: ["$contactedAt", false] }, 1, 0] } },
-          avgFoodQuality: { $avg: "$ratings.foodQuality" },
-          avgFoodTaste: { $avg: "$ratings.foodTaste" },
-          avgStaffBehavior: { $avg: "$ratings.staffBehavior" },
-          avgHygiene: { $avg: "$ratings.hygiene" },
-          avgAmbience: { $avg: "$ratings.ambience" },
-          avgServiceSpeed: { $avg: "$ratings.serviceSpeed" },
+          avgFoodQuality: { $avg: "$visits.ratings.foodQuality" },
+          avgFoodTaste: { $avg: "$visits.ratings.foodTaste" },
+          avgStaffBehavior: { $avg: "$visits.ratings.staffBehavior" },
+          avgHygiene: { $avg: "$visits.ratings.hygiene" },
+          avgAmbience: { $avg: "$visits.ratings.ambience" },
+          avgServiceSpeed: { $avg: "$visits.ratings.serviceSpeed" },
         }
       }
     ]);
@@ -161,7 +176,6 @@ export class MongoStorage implements IStorage {
       avgServiceSpeed: 0
     };
     
-    // Calculate Average Rating Overall
     const categories = ['foodQuality', 'foodTaste', 'staffBehavior', 'hygiene', 'ambience', 'serviceSpeed'];
     const averages = {
       foodQuality: result.avgFoodQuality || 0,
@@ -174,7 +188,6 @@ export class MongoStorage implements IStorage {
 
     const overallAvg = (averages.foodQuality + averages.foodTaste + averages.staffBehavior + averages.hygiene + averages.ambience + averages.serviceSpeed) / 6;
 
-    // Find top category
     let topCategory = 'foodQuality';
     let maxVal = -1;
     for (const [cat, val] of Object.entries(averages)) {
@@ -184,36 +197,22 @@ export class MongoStorage implements IStorage {
       }
     }
 
-    // 2. Weekly Trends (Last 7 days logic)
-    // We can just fetch all data and aggregate in JS for simplicity or use complex aggregation
-    // Let's use a simplified aggregation for trends
     const trends = await FeedbackModel.aggregate([
-      { $match: matchStage },
+      { $unwind: "$visits" },
+      { $match: { "visits.createdAt": { $gte: startDate } } },
       {
         $group: {
-          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
-          foodQuality: { $avg: "$ratings.foodQuality" },
-          foodTaste: { $avg: "$ratings.foodTaste" },
-          staffBehavior: { $avg: "$ratings.staffBehavior" },
-          hygiene: { $avg: "$ratings.hygiene" },
-          ambience: { $avg: "$ratings.ambience" },
-          serviceSpeed: { $avg: "$ratings.serviceSpeed" },
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$visits.createdAt" } },
+          foodQuality: { $avg: "$visits.ratings.foodQuality" },
+          foodTaste: { $avg: "$visits.ratings.foodTaste" },
+          staffBehavior: { $avg: "$visits.ratings.staffBehavior" },
+          hygiene: { $avg: "$visits.ratings.hygiene" },
+          ambience: { $avg: "$visits.ratings.ambience" },
+          serviceSpeed: { $avg: "$visits.ratings.serviceSpeed" },
         }
       },
       { $sort: { _id: 1 } }
     ]);
-
-    // 3. Category Performance
-    const categoryPerformance = categories.map(cat => ({
-      category: cat,
-      rating: averages[cat as keyof typeof averages]
-    }));
-
-    // 4. Feedback Volume
-    const feedbackVolume = [
-      { name: 'Contacted', value: result.contacted },
-      { name: 'Pending', value: result.total - result.contacted }
-    ];
 
     return {
       totalFeedback: result.total,
@@ -229,29 +228,38 @@ export class MongoStorage implements IStorage {
         ambience: Number(t.ambience.toFixed(1)),
         serviceSpeed: Number(t.serviceSpeed.toFixed(1)),
       })),
-      categoryPerformance,
-      feedbackVolume
+      categoryPerformance: categories.map(cat => ({
+        category: cat,
+        rating: averages[cat as keyof typeof averages]
+      })),
+      feedbackVolume: [
+        { name: 'Contacted', value: result.contacted },
+        { name: 'Pending', value: result.total - result.contacted }
+      ]
     };
   }
 
   private mapDocument(doc: IFeedback): Feedback {
-    const obj = doc.toObject();
     return {
-      name: obj.name,
-      phoneNumber: obj.phoneNumber,
-      location: obj.location || "Location 1", // Ensure location is present
-      dineType: obj.dineType || "dine_in",
-      ratings: obj.ratings,
-      note: obj.note || "",
-      staffName: obj.staffName || "",
-      staffComment: obj.staffComment || "",
-      createdAt: doc.createdAt.toISOString(),
-      contactedAt: doc.contactedAt?.toISOString(),
-      contactedBy: obj.contactedBy || null,
-      dateKey: obj.dateKey,
       _id: doc._id.toString(),
+      name: doc.name,
+      phoneNumber: doc.phoneNumber,
+      contactedAt: doc.contactedAt?.toISOString(),
+      contactedBy: doc.contactedBy || null,
+      visits: (doc.visits || []).map(v => ({
+        location: v.location,
+        dineType: v.dineType,
+        ratings: v.ratings,
+        note: v.note || "",
+        staffName: v.staffName || "",
+        staffComment: v.staffComment || "",
+        createdAt: v.createdAt instanceof Date ? v.createdAt.toISOString() : v.createdAt,
+        dateKey: v.dateKey
+      }))
     };
   }
 }
+
+export const storage = new MongoStorage();
 
 export const storage = new MongoStorage();

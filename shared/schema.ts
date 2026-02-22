@@ -3,8 +3,35 @@ import { z } from "zod";
 // MongoDB ID schema (string)
 export const objectIdSchema = z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid MongoDB ID");
 
-// Feedback Schema matching the user's requirements
+// Visit Schema
+export const visitSchema = z.object({
+  location: z.string().min(1, "Location is required"),
+  dineType: z.enum(["dine_in", "take_out"]),
+  ratings: z.object({
+    foodQuality: z.number().min(1).max(5),
+    foodTaste: z.number().min(1).max(5),
+    staffBehavior: z.number().min(1).max(5),
+    hygiene: z.number().min(1).max(5),
+    ambience: z.number().min(1).max(5),
+    serviceSpeed: z.number().min(1).max(5),
+  }),
+  note: z.string().max(500, "Note cannot exceed 500 characters").optional().default(""),
+  staffName: z.string().optional().default(""),
+  staffComment: z.string().optional().default(""),
+  createdAt: z.string().or(z.date()).optional(),
+  dateKey: z.string().optional(),
+});
+
+// Feedback Schema (Customer-based with Visits)
 export const feedbackSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  phoneNumber: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits"),
+  visits: z.array(visitSchema),
+  contactedAt: z.string().or(z.date()).nullable().optional(),
+  contactedBy: z.string().nullable().optional(),
+});
+
+export const insertFeedbackSchema = z.object({
   name: z.string().min(1, "Name is required"),
   phoneNumber: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits"),
   location: z.string().min(1, "Location is required"),
@@ -18,23 +45,8 @@ export const feedbackSchema = z.object({
     serviceSpeed: z.number().min(1).max(5),
   }),
   note: z.string().max(500, "Note cannot exceed 500 characters").optional().default(""),
-  createdAt: z.string().or(z.date()).optional(), // Date as ISO string from API
-  contactedAt: z.string().or(z.date()).nullable().optional(),
-  contactedBy: z.string().nullable().optional(),
-  dateKey: z.string().optional(), // For duplicate checking (YYYY-MM-DD)
   staffName: z.string().optional().default(""),
   staffComment: z.string().optional().default(""),
-});
-
-export const insertFeedbackSchema = feedbackSchema.pick({
-  name: true,
-  phoneNumber: true,
-  location: true,
-  dineType: true,
-  ratings: true,
-  note: true,
-  staffName: true,
-  staffComment: true,
 });
 
 // Admin Auth Schema
@@ -48,6 +60,7 @@ export const contactUpdateSchema = z.object({
 });
 
 // Types
+export type Visit = z.infer<typeof visitSchema>;
 export type Feedback = z.infer<typeof feedbackSchema> & { _id: string };
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 export type LoginCredentials = z.infer<typeof loginSchema>;
