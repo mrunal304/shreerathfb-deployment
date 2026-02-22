@@ -129,9 +129,8 @@ export default function Home() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="location1">Location 1</SelectItem>
-                          <SelectItem value="location2">Location 2</SelectItem>
-                          <SelectItem value="location3">Location 3</SelectItem>
+                          <SelectItem value="Shree Rath">Shree Rath</SelectItem>
+                          <SelectItem value="Ice Cream Parlour">Ice Cream Parlour</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
