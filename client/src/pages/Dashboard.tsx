@@ -268,9 +268,15 @@ function OverviewTab() {
 function FeedbackTab() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const { data, isLoading } = useFeedback({ page, limit: 10, search });
+  const queryClient = useQueryClient();
+  const { data, isLoading, isFetching, refetch } = useFeedback({ page, limit: 10, search });
   const markContacted = useMarkContacted();
   const { toast } = useToast();
+
+  const handleRefresh = () => {
+    refetch();
+    toast({ title: "Refreshing", description: "Fetching latest feedback from database..." });
+  };
 
   const handleMarkContacted = (id: string) => {
     const staffName = "Admin"; 
@@ -289,14 +295,26 @@ function FeedbackTab() {
     <div className="space-y-6 page-transition">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-3xl font-bold text-secondary font-display">Customer Feedback</h1>
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search name or phone..." 
-            className="pl-9 h-10 rounded-xl bg-white border-none shadow-sm"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={handleRefresh}
+            disabled={isFetching}
+            className="rounded-xl bg-white border-none shadow-sm hover:bg-secondary/5"
+            title="Refresh Data"
+          >
+            <TrendingUp className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+          </Button>
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Search name or phone..." 
+              className="pl-9 h-10 rounded-xl bg-white border-none shadow-sm"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
         </div>
       </div>
 
@@ -318,12 +336,12 @@ function FeedbackTab() {
               <TableRow>
                 <TableCell colSpan={7} className="text-center h-32 text-muted-foreground">Loading...</TableCell>
               </TableRow>
-            ) : data?.data.length === 0 ? (
+            ) : !data || data.data.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center h-32 text-muted-foreground">No feedback found</TableCell>
+                <TableCell colSpan={7} className="text-center h-32 text-muted-foreground">No feedback submitted yet</TableCell>
               </TableRow>
             ) : (
-              data?.data.map((item) => (
+              data.data.map((item) => (
                 <TableRow key={item._id} className="hover:bg-secondary/5 border-b border-secondary/5 transition-colors">
                   <TableCell>
                     <div className="font-medium text-foreground">{item.name}</div>
