@@ -80,15 +80,14 @@
 input:focus, 
 select:focus, 
 textarea:focus,
-.focus\:border-primary:focus {
-  outline: 2px solid #FF4500 !important;
-  outline-offset: 2px !important;
-  border-color: #FF4500 !important;
+.focus\:border-primary:focus,
+.focus-visible\:ring-0:focus {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 [data-radix-collection-item]:focus,
 .focus-visible\:ring-2:focus {
-  outline: 2px solid #FF4500 !important;
-  outline-offset: 2px !important;
+  outline: none !important;
   --tw-ring-width: 0px !important;
 }

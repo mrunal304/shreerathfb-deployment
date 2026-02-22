@@ -86,7 +86,7 @@ export default function Home() {
                     <FormControl>
                       <Input 
                         placeholder="Enter your name" 
-                        className="h-12 border-b border-t-0 border-l-0 border-r-0 rounded-none bg-transparent border-secondary/20 focus:border-primary px-0" 
+                        className="h-12 border-b border-t-0 border-l-0 border-r-0 rounded-none bg-transparent border-secondary/20 focus-visible:ring-0 focus:border-primary px-0 shadow-none focus:outline-none" 
                         {...field} 
                       />
                     </FormControl>
@@ -106,7 +106,7 @@ export default function Home() {
                         placeholder="+1 234 567 8900" 
                         type="tel"
                         maxLength={10}
-                        className="h-12 border-b border-t-0 border-l-0 border-r-0 rounded-none bg-transparent border-secondary/20 focus:border-primary px-0" 
+                        className="h-12 border-b border-t-0 border-l-0 border-r-0 rounded-none bg-transparent border-secondary/20 focus-visible:ring-0 focus:border-primary px-0 shadow-none focus:outline-none" 
                         {...field} 
                       />
                     </FormControl>
@@ -124,7 +124,7 @@ export default function Home() {
                       <FormLabel className="text-secondary font-semibold">Location You Visited:</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <SelectTrigger className="h-12 border-b border-t-0 border-l-0 border-r-0 rounded-none bg-transparent border-secondary/20 focus:border-primary px-0">
+                          <SelectTrigger className="h-12 border-b border-t-0 border-l-0 border-r-0 rounded-none bg-transparent border-secondary/20 focus:ring-0 focus:border-primary px-0 shadow-none focus:outline-none">
                             <SelectValue placeholder="Please Select" />
                           </SelectTrigger>
                         </FormControl>
@@ -267,7 +267,7 @@ export default function Home() {
                       <div className="relative">
                         <Textarea 
                           placeholder="Tell us what you loved or what we can improve..." 
-                          className="min-h-[100px] border border-secondary/20 rounded-lg bg-transparent focus:border-primary resize-none pb-8" 
+                          className="min-h-[100px] border-b border-t-0 border-l-0 border-r-0 rounded-none bg-transparent border-secondary/20 focus-visible:ring-0 focus:border-primary px-0 shadow-none resize-none pb-8 focus:outline-none" 
                           maxLength={500}
                           {...field} 
                         />
