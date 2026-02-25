@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Loader2, Lock } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useEffect } from "react";
 import { useUser } from "@/hooks/use-auth";
+import logoPngPath from "@assets/shreerath_logo_brown-removebg-preview_1772012426325.png";
 
 export default function Login() {
   const { data: user, isLoading: isUserLoading } = useUser();
@@ -52,11 +53,16 @@ export default function Login() {
   if (isUserLoading || user) return null;
 
   return (
-    <div className="min-h-screen bg-[#F5F5DC] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#E8E8D0] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4 text-primary">
-            <Lock className="w-8 h-8" />
+          <img 
+            src={logoPngPath} 
+            alt="Shree Rath Logo" 
+            className="h-[80px] mx-auto mb-4 object-contain bg-transparent"
+          />
+          <div className="text-[20px] text-[#5C3317] mb-2">
+            <span className="font-bold">Shree Rath</span> — Pure Veg Restaurant
           </div>
           <h1 className="text-3xl font-bold text-secondary font-display">Admin Portal</h1>
           <p className="text-secondary/60">Secure access for management only</p>
