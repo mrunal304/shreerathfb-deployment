@@ -297,7 +297,7 @@ export default function Home() {
               </div>
 
               <div className="pt-4 space-y-6">
-                <h3 className="text-lg font-semibold text-secondary font-display mb-4">Staff Feedback (Optional)</h3>
+                <h3 className="text-lg font-semibold text-secondary font-display mb-4">Staff Feedback</h3>
                 
                 <FormField
                   control={form.control}
