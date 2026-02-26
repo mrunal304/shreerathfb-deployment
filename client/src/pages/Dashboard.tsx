@@ -535,6 +535,21 @@ function FeedbackTab() {
                                     "{visit.note}"
                                   </div>
                                 )}
+
+                                <div className="bg-white p-3 rounded-xl shadow-sm text-sm border border-secondary/5">
+                                  <div className="flex flex-col gap-2">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-semibold text-secondary">Staff Name:</span>
+                                      <span className="text-muted-foreground">{visit.staffName}</span>
+                                    </div>
+                                    {visit.staffComment && (
+                                      <div className="flex flex-col gap-1">
+                                        <span className="font-semibold text-secondary">Staff Comment:</span>
+                                        <p className="text-muted-foreground italic">"{visit.staffComment}"</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
                             ))}
                           </div>
