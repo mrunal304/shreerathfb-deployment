@@ -27,7 +27,7 @@ export async function registerRoutes(
         checkPeriod: 86400000,
       }),
       cookie: { 
-        secure: app.get("env") === "production",
+        secure: false, // Set to false for compatibility with non-https servers
         sameSite: "lax",
         maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
       },
