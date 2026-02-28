@@ -13,7 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { Loader2, UtensilsCrossed, ChefHat, ConciergeBell, Utensils, Sparkles, Building2, ThumbsUp } from "lucide-react";
 
 export default function Home() {
@@ -160,6 +160,29 @@ export default function Home() {
                   )}
                 />
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-secondary font-semibold">Location You Visited:</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="h-12 border-b border-t-0 border-l-0 border-r-0 rounded-none bg-transparent border-secondary/20 focus:ring-0 focus:border-primary px-0 shadow-none focus:outline-none">
+                            <SelectValue placeholder="Please Select" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Shree Rath">Shree Rath</SelectItem>
+                          <SelectItem value="Ice Cream Parlour">Ice Cream Parlour</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name="dineType"
@@ -188,7 +211,12 @@ export default function Home() {
                 />
               </div>
 
-              <div className="pt-4">
+              <motion.div
+                layout
+                initial={false}
+                animate={{ opacity: 1, height: "auto" }}
+                className="pt-4"
+              >
                 <h3 className="text-lg font-semibold text-secondary font-display mb-4">Rate Your Experience</h3>
                 <div className="space-y-2 divide-y divide-secondary/10">
                   <FormField
@@ -294,53 +322,64 @@ export default function Home() {
                     )}
                   />
                 </div>
-              </div>
+              </motion.div>
 
-              <div className="pt-4 space-y-6">
-                <h3 className="text-lg font-semibold text-secondary font-display mb-4">Staff Feedback</h3>
-                
-                <FormField
-                  control={form.control}
-                  name="staffName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-secondary font-semibold">Name of Staff Who Served You <span className="text-destructive">*</span></FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="Enter the name of your waiter/staff" 
-                          className="h-12 border-b border-t-0 border-l-0 border-r-0 rounded-none bg-transparent border-secondary/20 focus-visible:ring-0 focus:border-primary px-0 shadow-none focus:outline-none" 
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <AnimatePresence mode="wait">
+                {form.watch("dineType") === "dine_in" && (
+                  <motion.div
+                    key="staff-feedback"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="pt-4 space-y-6 overflow-hidden"
+                  >
+                    <h3 className="text-lg font-semibold text-secondary font-display mb-4">Staff Feedback</h3>
+                    
+                    <FormField
+                      control={form.control}
+                      name="staffName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-secondary font-semibold">Name of Staff Who Served You <span className="text-destructive">*</span></FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="Enter the name of your waiter/staff" 
+                              className="h-12 border-b border-t-0 border-l-0 border-r-0 rounded-none bg-transparent border-secondary/20 focus-visible:ring-0 focus:border-primary px-0 shadow-none focus:outline-none" 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                <FormField
-                  control={form.control}
-                  name="staffComment"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-secondary font-semibold">Your experience with this staff member <span className="text-destructive">*</span></FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Textarea 
-                            placeholder="Tell us how they served you..." 
-                            className="min-h-[80px] border-b border-t-0 border-l-0 border-r-0 rounded-none bg-transparent border-secondary/20 focus-visible:ring-0 focus:border-primary px-0 shadow-none resize-none pb-8 focus:outline-none" 
-                            maxLength={500}
-                            {...field} 
-                          />
-                          <div className="absolute bottom-2 right-3 text-xs text-muted-foreground/60">
-                            {(field.value || "").length}/500
-                          </div>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                    <FormField
+                      control={form.control}
+                      name="staffComment"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-secondary font-semibold">Your experience with this staff member <span className="text-destructive">*</span></FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Textarea 
+                                placeholder="Tell us how they served you..." 
+                                className="min-h-[80px] border-b border-t-0 border-l-0 border-r-0 rounded-none bg-transparent border-secondary/20 focus-visible:ring-0 focus:border-primary px-0 shadow-none resize-none pb-8 focus:outline-none" 
+                                maxLength={500}
+                                {...field} 
+                              />
+                              <div className="absolute bottom-2 right-3 text-xs text-muted-foreground/60">
+                                {(field.value || "").length}/500
+                              </div>
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               <FormField
                 control={form.control}
