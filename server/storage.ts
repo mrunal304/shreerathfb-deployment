@@ -62,8 +62,8 @@ const VisitSchema = new Schema<IVisit>({
     serviceSpeed: { type: Number, min: 1, max: 5, required: true }
   },
   note: { type: String, maxlength: 500, default: "" },
-  staffName: { type: String, required: true },
-  staffComment: { type: String, required: true },
+  staffName: { type: String, required: false, default: "" },
+  staffComment: { type: String, required: false, default: "" },
   createdAt: { type: Date, default: Date.now },
   dateKey: { type: String, required: true }
 });
@@ -97,9 +97,9 @@ export class MongoStorage implements IStorage {
       location: insertFeedback.location,
       dineType: insertFeedback.dineType,
       ratings: insertFeedback.ratings,
-      note: insertFeedback.note,
-      staffName: insertFeedback.staffName,
-      staffComment: insertFeedback.staffComment,
+      note: insertFeedback.note || "",
+      staffName: insertFeedback.staffName || "",
+      staffComment: insertFeedback.staffComment || "",
       createdAt: now,
       dateKey
     };
